@@ -1,4 +1,4 @@
-package com.socialmedia.demo.dtos;
+package com.socialmedia.demo.dtos.User;
 
 import com.socialmedia.demo.enums.PrivacySetting;
 import lombok.AllArgsConstructor;

@@ -16,7 +16,9 @@ public class ChatDTO {
     private String id;
     private List<UserDTO> members;
     private LocalDateTime createAt;
+    private List<MessageDTO> messages;
     private MessageDTO lastMessage;
     private int unreadMessageCount;
     private int totalMessageCount;
+    private boolean isGroupChat;
 }

@@ -1,4 +1,4 @@
-package com.socialmedia.demo.dtos.requests;
+package com.socialmedia.demo.dtos.User;
 
 import com.socialmedia.demo.enums.PrivacySetting;
 import lombok.AllArgsConstructor;
@@ -11,6 +11,7 @@ import java.util.Date;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserUpdateRequest {
+    private String id;
     private String bio;
     private String gender;
     private Date dob;
