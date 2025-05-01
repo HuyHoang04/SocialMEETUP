@@ -2,6 +2,7 @@ package com.socialmedia.demo.entities;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -11,6 +12,7 @@ import java.util.List;
 @Entity
 @Table(name = "chats")
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Chat {

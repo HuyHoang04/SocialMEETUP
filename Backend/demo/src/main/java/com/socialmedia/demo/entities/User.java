@@ -4,16 +4,18 @@ import java.util.Date;
 import java.util.List;
 
 import com.socialmedia.demo.enums.PrivacySetting;
+import com.socialmedia.demo.enums.ROLE;
 
 import jakarta.persistence.*;
-
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "users")
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class User {
@@ -24,12 +26,13 @@ public class User {
     private String email;
     @Column(unique = true)
     private String username;
-
+    private String fullname;
     private String password;
     private String bio;
     private String gender;
     @Temporal(TemporalType.DATE)
     private Date dob;
+    private Date createdAt;
 
     @Enumerated(EnumType.STRING)
     private PrivacySetting privacySetting;
@@ -47,27 +50,17 @@ public class User {
     
     @Column(name = "cover_picture_type")
     private String coverPictureType;
-    
-    private String role;
+    @Enumerated(EnumType.STRING)
+    private ROLE role;
 
     @OneToMany(mappedBy = "author", cascade = CascadeType.ALL)
     private List<Post> posts;
     @ManyToMany(mappedBy = "members")
     private List<Chat> chats;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<UserFriend> friendRelations;
     
-    @ManyToMany
-    @JoinTable(
-        name = "user_friends",
-        joinColumns = @JoinColumn(name = "user_id"),
-        inverseJoinColumns = @JoinColumn(name = "friend_id")
-    )
-    private List<User> friends;
-    
-    @ManyToMany
-    @JoinTable(
-        name = "user_blacklists",
-        joinColumns = @JoinColumn(name = "user_id"),
-        inverseJoinColumns = @JoinColumn(name = "blacklisted_id")
-    )
-    private List<User> blacklists;
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<UserBlacklist> blacklistRelations;
 }

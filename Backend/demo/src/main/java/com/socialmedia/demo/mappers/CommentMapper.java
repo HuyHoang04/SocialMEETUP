@@ -1,100 +1,37 @@
 package com.socialmedia.demo.mappers;
 
-import com.socialmedia.demo.dtos.Comment.CommentDTO;
-import com.socialmedia.demo.dtos.Comment.CommentCreateRequest;
-import com.socialmedia.demo.dtos.Comment.CommentUpdateRequest;
 import com.socialmedia.demo.entities.Comment;
-import com.socialmedia.demo.entities.Post;
-import com.socialmedia.demo.entities.User;
-import org.springframework.stereotype.Component;
+import com.socialmedia.demo.requests.Comment.CommentCreateRequest;
+import com.socialmedia.demo.requests.Comment.CommentUpdateRequest;
+import com.socialmedia.demo.responses.CommentResponse;
+import org.mapstruct.*;
 
-import java.time.LocalDateTime;
+@Mapper(componentModel = "spring", uses = {UserMapper.class}) // Sử dụng UserMapper để map author
+public interface CommentMapper {
 
-@Component
-public class CommentMapper {
+    @Mapping(target = "id", ignore = true) // Bỏ qua id vì nó được tạo tự động
+    @Mapping(target = "author", ignore = true) // Author sẽ được set thủ công trong service
+    @Mapping(target = "post", ignore = true) // Post sẽ được set thủ công trong service
+    @Mapping(target = "createAt", ignore = true) // createAt được set bởi @PrePersist
+    @Mapping(target = "commentReactions", ignore = true) // Bỏ qua các mối quan hệ khác
+    Comment toEntity(CommentCreateRequest request);
 
-    private final UserMapper userMapper;
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE) // Chỉ cập nhật các trường không null
+    @Mapping(target = "id", ignore = true) // Không cho phép cập nhật id
+    @Mapping(target = "author", ignore = true) // Không cho phép cập nhật author qua mapper
+    @Mapping(target = "post", ignore = true) // Không cho phép cập nhật post qua mapper
+    @Mapping(target = "createAt", ignore = true) // Không cho phép cập nhật ngày tạo
+    @Mapping(target = "commentReactions", ignore = true) // Bỏ qua các mối quan hệ khác
+    void updateEntityFromRequest(CommentUpdateRequest request, @MappingTarget Comment comment);
 
-    public CommentMapper(UserMapper userMapper) {
-        this.userMapper = userMapper;
-    }
+    // Map từ Comment entity sang CommentResponse DTO
+    // UserMapper sẽ tự động được sử dụng cho trường 'author'
+    @Mapping(source = "post.id", target = "postId") // Map ID của Post entity sang postId trong response
+    CommentResponse toResponse(Comment comment);
 
-    /**
-     * Converts Comment entity to CommentDTO
-     */
-    public CommentDTO toDTO(Comment comment) {
-        if (comment == null) {
-            return null;
-        }
-        
-        CommentDTO dto = new CommentDTO();
-        dto.setId(comment.getId());
-        dto.setAuthor(userMapper.toDTO(comment.getAuthor()));
-        dto.setPostId(comment.getPost().getId());
-        dto.setContent(comment.getContent());
-        dto.setImageData(comment.getImageData());
-        dto.setImageType(comment.getImageType());
-        dto.setCreateAt(comment.getCreateAt());
-        
-        // Set reaction count
-        if (comment.getCommentReactions() != null) {
-            dto.setReactionCount(comment.getCommentReactions().size());
-        }
-        
-        return dto;
-    }
-    
-    /**
-     * Creates a new Comment entity from CommentCreateRequest
-     */
-    public Comment toEntity(CommentCreateRequest request, User author, Post post) {
-        if (request == null) {
-            return null;
-        }
-        
-        Comment comment = new Comment();
-        comment.setAuthor(author);
-        comment.setPost(post);
-        comment.setContent(request.getContent());
-        comment.setImageData(request.getImageData());
-        comment.setImageType(request.getImageType());
-        comment.setCreateAt(LocalDateTime.now());
-        
+    // Phương thức tiện ích để cập nhật entity (tùy chọn)
+    default Comment updateEntity(Comment comment, CommentUpdateRequest request) {
+        updateEntityFromRequest(request, comment);
         return comment;
-    }
-    
-    /**
-     * Updates an existing Comment entity from CommentUpdateRequest
-     */
-    public void updateEntityFromDto(CommentUpdateRequest request, Comment comment) {
-        if (request == null || comment == null) {
-            return;
-        }
-        
-        comment.setContent(request.getContent());
-    }
-    
-    /**
-     * Updates comment image
-     */
-    public void updateCommentImage(byte[] imageData, String imageType, Comment comment) {
-        if (comment == null || imageData == null) {
-            return;
-        }
-        
-        comment.setImageData(imageData);
-        comment.setImageType(imageType);
-    }
-    
-    /**
-     * Removes image from comment
-     */
-    public void removeCommentImage(Comment comment) {
-        if (comment == null) {
-            return;
-        }
-        
-        comment.setImageData(null);
-        comment.setImageType(null);
     }
 }

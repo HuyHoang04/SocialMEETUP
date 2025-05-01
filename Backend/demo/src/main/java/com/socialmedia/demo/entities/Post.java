@@ -3,6 +3,7 @@ package com.socialmedia.demo.entities;
 import com.socialmedia.demo.enums.PrivacySetting;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -12,6 +13,7 @@ import java.util.List;
 @Entity
 @Table(name = "posts")
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Post {

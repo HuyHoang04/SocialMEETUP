@@ -1,85 +1,35 @@
 package com.socialmedia.demo.mappers;
 
-import com.socialmedia.demo.dtos.PostReaction.PostReactionDTO;
-import com.socialmedia.demo.dtos.PostReaction.PostReactionCreateRequest;
-import com.socialmedia.demo.dtos.PostReaction.PostReactionUpdateRequest;
-import com.socialmedia.demo.entities.Post;
 import com.socialmedia.demo.entities.PostReaction;
-import com.socialmedia.demo.entities.User;
-import org.springframework.stereotype.Component;
+import com.socialmedia.demo.requests.PostReaction.PostReactionCreateRequest;
+import com.socialmedia.demo.requests.PostReaction.PostReactionUpdateRequest;
+import com.socialmedia.demo.responses.PostReactionResponse;
+import org.mapstruct.*;
 
-import java.time.LocalDateTime;
+@Mapper(componentModel = "spring", uses = {UserMapper.class}) // Use UserMapper for user mapping
+public interface PostReactionMapper {
 
-@Component
-public class PostReactionMapper {
+    @Mapping(target = "id", ignore = true) // Ignore ID as it's auto-generated
+    @Mapping(target = "user", ignore = true) // User will be set manually in the service
+    @Mapping(target = "post", ignore = true) // Post will be set manually in the service
+    @Mapping(target = "createAt", ignore = true) // createAt is set by @PrePersist
+    PostReaction toEntity(PostReactionCreateRequest request);
 
-    private final UserMapper userMapper;
-    private final PostMapper postMapper;
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE) // Update only non-null fields
+    @Mapping(target = "id", ignore = true) // Do not update ID
+    @Mapping(target = "user", ignore = true) // Do not update user directly via mapper
+    @Mapping(target = "post", ignore = true) // Do not update post directly via mapper
+    @Mapping(target = "createAt", ignore = true) // Do not update creation timestamp
+    void updateEntityFromRequest(PostReactionUpdateRequest request, @MappingTarget PostReaction postReaction);
 
-    public PostReactionMapper(UserMapper userMapper, PostMapper postMapper) {
-        this.userMapper = userMapper;
-        this.postMapper = postMapper;
-    }
+    // Map from PostReaction entity to PostReactionResponse DTO
+    // UserMapper will be used automatically for the 'user' field mapping (PostReaction.user -> UserResponse)
+    @Mapping(source = "post.id", target = "postId") // Map Post entity's ID to postId field in response
+    PostReactionResponse toResponse(PostReaction postReaction);
 
-    /**
-     * Converts PostReaction entity to PostReactionDTO
-     */
-    public PostReactionDTO toDTO(PostReaction postReaction) {
-        if (postReaction == null) {
-            return null;
-        }
-        
-        PostReactionDTO dto = new PostReactionDTO();
-        dto.setId(postReaction.getId().toString());
-        dto.setUser(userMapper.toDTO(postReaction.getUser()));
-        dto.setPost(postMapper.toDTO(postReaction.getPost()));
-        dto.setReactionType(postReaction.getReactionType());
-        dto.setCreateAt(postReaction.getCreateAt());
-        
-        return dto;
-    }
-    
-    /**
-     * Creates a new PostReaction entity from PostReactionCreateRequest
-     */
-    public PostReaction toEntity(PostReactionCreateRequest request, User user, Post post) {
-        if (request == null) {
-            return null;
-        }
-        
-        PostReaction postReaction = new PostReaction();
-        postReaction.setUser(user);
-        postReaction.setPost(post);
-        postReaction.setReactionType(request.getReactionType());
-        postReaction.setCreateAt(LocalDateTime.now());
-        
+    // Utility method (optional) to update entity - might not be needed if service handles update logic directly
+    default PostReaction updateEntity(PostReaction postReaction, PostReactionUpdateRequest request) {
+        updateEntityFromRequest(request, postReaction);
         return postReaction;
-    }
-    
-    /**
-     * Updates an existing PostReaction entity from PostReactionUpdateRequest
-     */
-    public void updateEntityFromDto(PostReactionUpdateRequest request, PostReaction postReaction) {
-        if (request == null || postReaction == null) {
-            return;
-        }
-        
-        postReaction.setReactionType(request.getReactionType());
-    }
-    
-    /**
-     * Creates a simplified DTO with minimal information
-     */
-    public PostReactionDTO toSimpleDTO(PostReaction postReaction) {
-        if (postReaction == null) {
-            return null;
-        }
-        
-        PostReactionDTO dto = new PostReactionDTO();
-        dto.setId(postReaction.getId().toString());
-        dto.setUser(userMapper.toDTO(postReaction.getUser()));
-        dto.setReactionType(postReaction.getReactionType());
-        
-        return dto;
     }
 }

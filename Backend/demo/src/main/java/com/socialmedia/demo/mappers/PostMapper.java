@@ -1,102 +1,36 @@
 package com.socialmedia.demo.mappers;
 
-import com.socialmedia.demo.dtos.Post.PostDTO;
-import com.socialmedia.demo.dtos.Post.PostCreateRequest;
-import com.socialmedia.demo.dtos.Post.PostUpdateRequest;
-import com.socialmedia.demo.dtos.Post.PostImageUpdateRequest;
 import com.socialmedia.demo.entities.Post;
-import com.socialmedia.demo.entities.User;
-import org.springframework.stereotype.Component;
+import com.socialmedia.demo.requests.Post.PostCreateRequest;
+import com.socialmedia.demo.requests.Post.PostUpdateRequest;
+import com.socialmedia.demo.responses.PostResponse;
+import org.mapstruct.*;
 
-@Component
-public class PostMapper {
+@Mapper(componentModel = "spring", uses = UserMapper.class) // Use UserMapper for author mapping
+public interface PostMapper {
 
-    private final UserMapper userMapper;
+    @Mapping(target = "id", ignore = true) // Ignore ID as it's auto-generated
+    @Mapping(target = "author", ignore = true) // Author will be set manually in the service
+    @Mapping(target = "createAt", ignore = true) // createAt is set by @PrePersist
+    @Mapping(target = "comments", ignore = true) // Ignore relationships
+    @Mapping(target = "postReactions", ignore = true) // Ignore relationships
+    Post toEntity(PostCreateRequest request);
 
-    public PostMapper(UserMapper userMapper) {
-        this.userMapper = userMapper;
-    }
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE) // Update only non-null fields
+    @Mapping(target = "id", ignore = true) // Do not update ID
+    @Mapping(target = "author", ignore = true) // Do not update author directly via mapper
+    @Mapping(target = "createAt", ignore = true) // Do not update creation timestamp
+    @Mapping(target = "comments", ignore = true) // Ignore relationships
+    @Mapping(target = "postReactions", ignore = true) // Ignore relationships
+    void updateEntityFromRequest(PostUpdateRequest request, @MappingTarget Post post);
 
-    /**
-     * Converts Post entity to PostDTO
-     */
-    public PostDTO toDTO(Post post) {
-        if (post == null) {
-            return null;
-        }
-        
-        PostDTO dto = new PostDTO();
-        dto.setId(post.getId());
-        dto.setAuthor(userMapper.toDTO(post.getAuthor()));
-        dto.setContent(post.getContent());
-        dto.setImageData(post.getImageData());
-        dto.setImageType(post.getImageType());
-        dto.setCreateAt(post.getCreateAt());
-        dto.setPrivacySetting(post.getPrivacySetting());
-        
-        // Set counts
-        if (post.getComments() != null) {
-            dto.setCommentCount(post.getComments().size());
-        }
-        
-        if (post.getPostReactions() != null) {
-            dto.setReactionCount(post.getPostReactions().size());
-        }
-        
-        return dto;
-    }
-    
-    /**
-     * Creates a new Post entity from PostCreateRequest
-     */
-    public Post toEntity(PostCreateRequest request, User author) {
-        if (request == null) {
-            return null;
-        }
-        
-        Post post = new Post();
-        post.setAuthor(author);
-        post.setContent(request.getContent());
-        post.setImageData(request.getImageData());
-        post.setImageType(request.getImageType());
-        post.setPrivacySetting(request.getPrivacySetting());
-        
+    // Map from Post entity to PostResponse DTO
+    // UserMapper will be used automatically for the 'author' field mapping (Post.author -> UserResponse)
+    PostResponse toResponse(Post post);
+
+    // Utility method to update entity
+    default Post updateEntity(Post post, PostUpdateRequest request) {
+        updateEntityFromRequest(request, post);
         return post;
-    }
-    
-    /**
-     * Updates an existing Post entity from PostUpdateRequest
-     */
-    public void updateEntityFromDto(PostUpdateRequest request, Post post) {
-        if (request == null || post == null) {
-            return;
-        }
-        
-        post.setContent(request.getContent());
-        post.setPrivacySetting(request.getPrivacySetting());
-    }
-    
-    /**
-     * Updates post image from PostImageUpdateRequest
-     */
-    public void updatePostImage(PostImageUpdateRequest request, Post post) {
-        if (request == null || post == null) {
-            return;
-        }
-        
-        post.setImageData(request.getImageData());
-        post.setImageType(request.getImageType());
-    }
-    
-    /**
-     * Removes image from post
-     */
-    public void removePostImage(Post post) {
-        if (post == null) {
-            return;
-        }
-        
-        post.setImageData(null);
-        post.setImageType(null);
     }
 }
