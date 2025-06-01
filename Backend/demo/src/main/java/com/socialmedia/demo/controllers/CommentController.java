@@ -9,8 +9,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.security.core.context.SecurityContextHolder; // Thêm import này
-import org.springframework.security.core.Authentication; // Thêm import này
+import org.springframework.security.core.context.SecurityContextHolder; // Đảm bảo đã import
+import org.springframework.security.core.Authentication; // Đảm bảo đã import
+import org.springframework.security.access.AccessDeniedException; // Thêm import này
 
 import java.util.List;
 
@@ -65,22 +66,27 @@ public class CommentController {
         return ResponseEntity.ok(response);
     }
 
-    // Endpoint để cập nhật thông tin comment (Cách làm KHÔNG AN TOÀN - KHÔNG KHUYẾN NGHỊ)
+    // Endpoint để cập nhật thông tin comment (Phiên bản an toàn)
     @PutMapping("/comments/{commentId}")
-    public ResponseEntity<ApiResponse<CommentResponse>> updateComment_Insecure( // Đổi tên để phân biệt
+    public ResponseEntity<ApiResponse<CommentResponse>> updateComment( // Đổi tên lại
             @PathVariable String commentId,
             @RequestBody CommentUpdateRequest request
     ) {
-        // Lấy authorId trực tiếp từ request body
-        String authorIdFromRequest = request.getAuthorId();
-        if (authorIdFromRequest == null || authorIdFromRequest.trim().isEmpty()) {
-             throw new IllegalArgumentException("Author ID must be provided in the request for update");
+        // Lấy thông tin xác thực của người dùng hiện tại
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated() || authentication.getPrincipal().equals("anonymousUser")) {
+             throw new AccessDeniedException("User not authenticated");
         }
+        String authenticatedAuthorId = authentication.getName(); // Lấy ID người dùng đã xác thực
 
-        // *** CẢNH BÁO BẢO MẬT ***
-        // Truyền authorId từ request vào tham số kiểm tra quyền của service.
-        // Điều này cho phép bất kỳ ai cũng có thể sửa comment nếu biết commentId và authorId.
-        CommentResponse updatedComment = commentService.updateComment(commentId, request, authorIdFromRequest);
+        // Không cần lấy authorId từ request body nữa
+        // String authorIdFromRequest = request.getAuthorId(); // Xóa dòng này
+        // if (authorIdFromRequest == null || authorIdFromRequest.trim().isEmpty()) { // Xóa khối if này
+        //      throw new IllegalArgumentException("Author ID must be provided in the request for update");
+        // }
+
+        // Truyền authenticatedAuthorId vào service để kiểm tra quyền sở hữu comment
+        CommentResponse updatedComment = commentService.updateComment(commentId, request, authenticatedAuthorId);
 
         ApiResponse<CommentResponse> response = new ApiResponse<>();
         response.setCode(String.valueOf(HttpStatus.OK.value())); // 200
@@ -88,17 +94,16 @@ public class CommentController {
         return ResponseEntity.ok(response);
     }
 
-    // Endpoint để xóa comment
+    // Endpoint để xóa comment (Đã đúng logic lấy authenticatedAuthorId)
     @DeleteMapping("/comments/{commentId}")
     public ResponseEntity<ApiResponse<String>> deleteComment(
-            @PathVariable String commentId
-            // Loại bỏ @RequestHeader("X-Author-Id")
-    ) {
+            @PathVariable String commentId)
+            {
         // Lấy thông tin xác thực của người dùng hiện tại
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-         if (authentication == null || !authentication.isAuthenticated()) {
+         if (authentication == null || !authentication.isAuthenticated() || authentication.getPrincipal().equals("anonymousUser")) {
              // Xử lý trường hợp người dùng chưa xác thực
-             throw new RuntimeException("User not authenticated"); // Thay bằng exception phù hợp
+             throw new AccessDeniedException("User not authenticated"); // Sử dụng AccessDeniedException
          }
         String authenticatedAuthorId = authentication.getName(); // Lấy ID
 

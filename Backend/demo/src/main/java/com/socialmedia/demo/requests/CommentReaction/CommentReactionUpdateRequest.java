@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CommentReactionUpdateRequest {
     private String id;
+    private String userId;
     private String commentId;
     private ReactionType reactionType;
 }

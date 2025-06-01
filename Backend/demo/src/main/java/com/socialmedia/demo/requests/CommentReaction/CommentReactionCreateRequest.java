@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CommentReactionCreateRequest {
+    private String userId;
     private String commentId;
     private ReactionType reactionType;
 }

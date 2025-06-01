@@ -11,9 +11,9 @@ import java.util.Date;
 @Mapper(componentModel = "spring", imports = Date.class)
 public interface UserMapper {
 
-    @Mapping(target = "id", ignore = true) // Bỏ qua id vì nó được tạo tự động
-    @Mapping(target = "createdAt", expression = "java(new Date())") // Đặt ngày tạo là ngày hiện tại
-    @Mapping(target = "posts", ignore = true) // Bỏ qua các mối quan hệ
+    @Mapping(target = "id", ignore = true) 
+    @Mapping(target = "createdAt", expression = "java(new Date())") 
+    @Mapping(target = "posts", ignore = true)
     @Mapping(target = "chats", ignore = true)
     @Mapping(target = "friendRelations", ignore = true)
     @Mapping(target = "blacklistRelations", ignore = true)
